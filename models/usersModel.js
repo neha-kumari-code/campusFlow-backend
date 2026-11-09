@@ -10,9 +10,9 @@ const userSchema= new mongoose.Schema({
         type:String,
         unique:true
     },
-    password:{
+    googleId:{
         type:String,
-        unique:true
+        default:null
     },
     profileImg:{
         type:String,
@@ -24,7 +24,8 @@ const userSchema= new mongoose.Schema({
         default:"student"
     },
     contact:{
-        type:String
+        type:String,
+        default:""
     }
 })
 
