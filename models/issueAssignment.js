@@ -11,6 +11,6 @@ const issueAssignmentSchema=new mongoose.Schema({
         ref:'User',
         required:true
     }
-})
+},{timestamps:true})
 
 export const issueAssignmentModel= mongoose.models.IssueAssign || mongoose.model('IssueAssign',issueAssignmentSchema)

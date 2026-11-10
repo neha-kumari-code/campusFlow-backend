@@ -1,6 +1,7 @@
-import { User } from "../models/usersModel";
-import { googleClient } from "../config/google";
+import { User } from "../models/usersModel.js";
+import { googleClient } from "../config/google.js";
 import jwt from "jsonwebtoken"
+import { Issue } from "../models/issuesModel.js";
 const google=async(req,res)=>{
     try {
         const {googleIdToken}=req.body;
@@ -56,3 +57,56 @@ const google=async(req,res)=>{
     }
 }
 
+const getAllUnresolvedIssues=async()=>{
+    try {
+        const unresolvedIssues=await Issue.find({status:{
+            $nin:["resolved","rejected"]
+        }}).sort({createdAt:-1})
+        return res.json({
+            success:true,
+            unresolvedIssues
+        })
+    } catch (error) {
+        return res.json({
+            success:false,
+            message:error.message
+        })
+    }
+}
+
+const getLatest3UnresolvedIssues=async()=>{
+    try {
+        const getLatest3Iss=await Issue.find({status:{
+            $nin:["resolved","rejected"]
+        }}).sort({createdAt:-1}).limit(3);
+        return res.json({
+            success:true,
+            getLatest3Iss
+        })
+    } catch (error) {
+        return res.json({
+            success:false,
+            message:error.message
+        })
+    }
+}
+
+const createIssue=async(req,res)=>{
+    try {
+        const {title,description,section}=req.body
+        if(!title || !description || !section){
+            return res.json({
+                success:false,
+                message:"details missing"
+            })
+        }
+        const media=req.files
+        if(media){
+            
+        }
+    } catch (error) {
+        
+    }
+}
+
+export {google, getAllUnresolvedIssues, getLatest3UnresolvedIssues}

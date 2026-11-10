@@ -11,4 +11,6 @@ const voteSchema= new mongoose.Schema({
         ref:'User',
         required:true
     }
-})
+},{timestamps:true})
+
+export const Vote=mongoose.models.Vote || mongoose.model('Vote',voteSchema)

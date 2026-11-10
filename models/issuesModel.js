@@ -27,10 +27,10 @@ const issueSchema= new mongoose.Schema({
     },
     status:{
         type:String,
-        enum:["pending","approved","resolved"],
-        default:"pending",
+        enum:["reported","being_reviewed","staff_assigned","inProgess","resolved","rejected"],
+        default:"reported",
         required:true
     }
-})
+},{timestamps:true})
 
 export const Issue= mongoose.models.Issue || mongoose.model('Issue',issueSchema)
