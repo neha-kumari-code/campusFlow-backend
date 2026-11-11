@@ -2,6 +2,9 @@ import { User } from "../models/usersModel.js";
 import { googleClient } from "../config/google.js";
 import jwt from "jsonwebtoken"
 import { Issue } from "../models/issuesModel.js";
+import { uploadMultiFilesToCloud } from "../utils/upload2Cloud.js";
+import { Location } from "../models/locationModel.js";
+import {  getVisibilityFilter } from "../utils/filteration.js";
 const google=async(req,res)=>{
     try {
         const {googleIdToken}=req.body;
@@ -57,14 +60,27 @@ const google=async(req,res)=>{
     }
 }
 
-const getAllUnresolvedIssues=async()=>{
+const getAllUnresolvedIssues=async(req,res)=>{
     try {
-        const unresolvedIssues=await Issue.find({status:{
-            $nin:["resolved","rejected"]
-        }}).sort({createdAt:-1})
+        const userId=req.user.id;
+        const user=await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+       
+        const filter={
+           ...getVisibilityFilter(user),
+            status:{
+                $nin:["resolved","rejected"]
+            }
+        }
+        const issues=await Issue.find(filter).sort({createdAt:-1})
         return res.json({
             success:true,
-            unresolvedIssues
+            issues
         })
     } catch (error) {
         return res.json({
@@ -74,14 +90,27 @@ const getAllUnresolvedIssues=async()=>{
     }
 }
 
-const getLatest3UnresolvedIssues=async()=>{
+const getLatest3UnresolvedIssues=async(req,res)=>{
     try {
-        const getLatest3Iss=await Issue.find({status:{
-            $nin:["resolved","rejected"]
-        }}).sort({createdAt:-1}).limit(3);
+        const userId=req.user.id;
+        const user=await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+       
+        const filter={
+           ...getVisibilityFilter(user),
+            status:{
+                $nin:["resolved","rejected"]
+            }
+        }
+        const issues=await Issue.find(filter).sort({createdAt:-1}).limit(3);
         return res.json({
             success:true,
-            getLatest3Iss
+            issues
         })
     } catch (error) {
         return res.json({
@@ -93,20 +122,67 @@ const getLatest3UnresolvedIssues=async()=>{
 
 const createIssue=async(req,res)=>{
     try {
-        const {title,description,section}=req.body
-        if(!title || !description || !section){
+        const {title,description,category,locationId}=req.body
+        if(!title || !description || !category || !location){
             return res.json({
                 success:false,
                 message:"details missing"
             })
         }
-        const media=req.files
-        if(media){
-            
-        }
+        const media=req.files;
+        const uploadedFile=await uploadMultiFilesToCloud(media);
+        const files=uploadedFile.map((f)=>{
+            url:f.secure_url
+        })
+        const location= await Location.findById(locationId)
+        await Issue.create({
+            title,
+            category,
+            description,
+            locationId,
+            media:files,
+            visibility:location.visibility,
+            target:location.target,
+            status:'pending',
+            createdBy:req.body.userId
+        })
+        return res.json({
+            success:true,
+            message:"Issue created!"
+        })
     } catch (error) {
         
     }
 }
 
-export {google, getAllUnresolvedIssues, getLatest3UnresolvedIssues}
+const getIssue=async(req,res)=>{
+    try {
+        const {issueId}=req.params;
+        const userId=req.user.id;
+        const user=await User.findById(userId);
+         if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+    
+        const issue=await Issue.findOne({_id:issueId, ...getVisibilityFilter(user)}).select("-visibility -target -createdBy")
+        if (!issue) {
+            return res.status(404).json({
+                success: false,
+                message: "Issue not found"
+            });
+        }
+        return res.json({
+            success:true,
+            issue
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+}
+export {google, getAllUnresolvedIssues, getLatest3UnresolvedIssues,createIssue,getIssue} 

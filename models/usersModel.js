@@ -26,6 +26,10 @@ const userSchema= new mongoose.Schema({
     contact:{
         type:String,
         default:""
+    },
+    isProfileComplete:{
+        type:Boolean,
+        default:false
     }
 },{timestamps:true})
 

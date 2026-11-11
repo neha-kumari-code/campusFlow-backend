@@ -8,7 +8,7 @@ const issueAssignmentSchema=new mongoose.Schema({
     },
     staff:{
         type:mongoose.Schema.Types.ObjectId,
-        ref:'User',
+        ref:'Staff',
         required:true
     }
 },{timestamps:true})
