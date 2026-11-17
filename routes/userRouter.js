@@ -1,5 +1,5 @@
 import express from "express"
-import { createIssue, getAllUnresolvedIssues, getIssue, getLatest3UnresolvedIssues, google } from "../controller/studentController.js"
+import { createIssue, getAllUnresolvedIssues, getIssue, getLatest3UnresolvedIssues, google, searchIssue } from "../controller/studentController.js"
 import { upload } from "../middleware/upload.js"
 import { authStudent } from "../middleware/studentMiddleware.js"
 
@@ -10,4 +10,5 @@ userRouter.post("/unresolved",authStudent, getAllUnresolvedIssues)
 userRouter.post("/unresolved/latest",authStudent,getLatest3UnresolvedIssues)
 userRouter.post("/create",authStudent,upload.array("media",5),createIssue)
 userRouter.get("/get/:issueId",authStudent,getIssue)
+userRouter.get("/issues/search", authStudent, searchIssue)
 export default userRouter

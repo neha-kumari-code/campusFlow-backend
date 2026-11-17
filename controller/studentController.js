@@ -5,6 +5,7 @@ import { Issue } from "../models/issuesModel.js";
 import { uploadMultiFilesToCloud } from "../utils/upload2Cloud.js";
 import { Location } from "../models/locationModel.js";
 import {  getVisibilityFilter } from "../utils/filteration.js";
+import { Comment } from "../models/commentsModel.js";
 const google=async(req,res)=>{
     try {
         const {googleIdToken}=req.body;
@@ -185,4 +186,94 @@ const getIssue=async(req,res)=>{
         });
     }
 }
-export {google, getAllUnresolvedIssues, getLatest3UnresolvedIssues,createIssue,getIssue} 
+
+const searchIssue = async(req,res)=>{
+    try {
+        const {query} = req.query;
+        const userId=req.user.id;
+        const user=await User.findById(userId);
+         if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+        const issues = await Issue.find({
+            $or:[
+               {
+                title:{
+                    $regex:keyword,
+                    $option:"i"
+                },
+                description:{
+                    $regex:keyword,
+                    $option:"i"
+                }
+               }
+            ],
+            status:{
+                $nin:["resolved","rejected"]
+            },
+            ...getVisibilityFilter(user)
+        }) 
+        return res.json({
+            success:false,
+            issues
+        })
+    } catch (error) {
+        return res.json({
+            success:false,
+            message:`error while searching issues ${error}`
+        })
+    }
+}
+
+const postComment = async(req,res)=>{
+    try {
+        const {comment,issueId} = req.body;
+        const detail= {
+            content: comment,
+            user: req.user.id,
+            issue : issueId
+        }
+
+        await Comment.create(detail);
+
+        return res.json({
+            success:true,
+            message:"Successfully Commented!"
+        })
+
+    } catch (error) {
+        return res.json({
+            success:false,
+            message:`error while posting comment ${error}`
+        })
+    }
+}
+
+const getComments = async(req,res)=>{
+    try {
+        const {issueId} = req.params;
+        const issue = await Issue.findById(issueId)
+        if(issue.createdBy!==req.user.id){
+            return res.json({
+                success:false,
+                message:`you are not valid user to see that comments`
+            })
+        }
+
+        const comments = await Comment.find({issue:issueId})
+
+        return res.json({
+            success:true,
+            comments
+        })
+    } catch (error) {
+         return res.json({
+            success:false,
+            message:`error while getting comments ${error}`
+        })
+    }
+}
+export {google, getAllUnresolvedIssues, getLatest3UnresolvedIssues,createIssue,getIssue,searchIssue} 
